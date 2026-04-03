@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Food</title>
+<style>
+  :root {
+    --bg:       #fdf6ee;
+    --card:     #ffffff;
+    --sub:      #fef9f4;
+    --border:   #e8ddd0;
+    --accent:   #d4622a;
+    --accentLt: #fbe8de;
+    --accentMd: #f0a882;
+    --gold:     #c47f2e;
+    --goldLt:   #fdf0dc;
+    --green:    #4a8c5c;
+    --greenLt:  #e8f5ec;
+    --red:      #c0392b;
+    --redLt:    #fdecea;
+    --text:     #2c1e14;
+    --mid:      #7a6355;
+    --soft:     #b0988a;
+    --shadow:   0 2px 12px rgba(180,120,80,0.10);
+    --shadowMd: 0 4px 24px rgba(180,120,80,0.14);
+    --font:     'Palatino Linotype', Palatino, serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+  #app { flex: 1; overflow-y: auto; padding-bottom: 72px; }
+
+  /* ── Nav ── */
+  nav { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid var(--border); display: flex; z-index: 100; box-shadow: 0 -2px 16px rgba(180,120,80,0.08); }
+  nav button { flex: 1; padding: 10px 0 12px; background: none; border: none; border-top: 2px solid transparent; cursor: pointer; color: var(--soft); display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; letter-spacing: .07em; text-transform: uppercase; font-family: var(--font); transition: color .15s; }
+  nav button.active { color: var(--accent); border-top-color: var(--accent); }
+
+  /* ── Tabs ── */
+  .tab { display: none; } .tab.active { display: block; }
+
+  /* ── Shop header ── */
+  .shop-header { background: var(--accent); padding: 20px 18px 14px; color: #fff; }
+  .shop-header h1 { font-size: 24px; font-weight: normal; margin-bottom: 14px; }
+  .shop-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .pill-row { display: flex; gap: 6px; }
+  .pill { padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,.4); background: rgba(255,255,255,.12); color: #fff; font-size: 13px; cursor: pointer; font-family: var(--font); transition: all .15s; }
+  .pill.active { background: #fff; color: var(--accent); font-weight: bold; }
+  .pill-light { padding: 5px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,.5); background: rgba(255,255,255,.15); color: #fff; font-size: 12px; cursor: pointer; font-family: var(--font); }
+  .pill-light.on { background: rgba(255,255,255,.95); color: var(--accent); }
+
+  /* ── Sub-tabs ── */
+  .subtab { display: none; padding: 20px 16px 0; } .subtab.active { display: block; }
+
+  /* ── Add Items ── */
+  .add-center { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+  .mic-btn { width: 96px; height: 96px; border-radius: 50%; border: 3px solid var(--accent); background: var(--accentLt); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 40px; box-shadow: var(--shadowMd); transition: all .2s; user-select: none; -webkit-user-select: none; }
+  .mic-btn.listening { border-color: var(--red); background: var(--redLt); box-shadow: 0 0 0 10px var(--redLt), 0 0 0 22px rgba(192,57,43,.07); }
+  .mic-hint { font-size: 12px; color: var(--soft); }
+  .mic-hint.active { color: var(--red); font-style: italic; font-size: 13px; }
+  .voice-textarea { width: 100%; min-height: 84px; background: #fff; border: 1.5px solid var(--border); color: var(--text); border-radius: 12px; padding: 12px 14px; font-size: 15px; font-family: var(--font); resize: vertical; outline: none; box-shadow: var(--shadow); }
+  .submit-btn { width: 100%; padding: 14px; border-radius: 12px; border: none; background: var(--accent); color: #fff; font-size: 16px; cursor: pointer; font-family: var(--font); font-weight: bold; letter-spacing: .04em; box-shadow: var(--shadowMd); transition: background .2s; }
+  .submit-btn:disabled { background: var(--border); color: var(--soft); cursor: not-allowed; }
+
+  /* ── Section heads ── */
+  .sec-head { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: bold; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .sec-note { font-size: 12px; color: var(--soft); margin: 0 0 8px; }
+
+  /* ── Grocery row ── */
+  .g-row { border-bottom: 1px solid var(--border); }
+  .g-row-main { display: flex; align-items: center; gap: 10px; padding: 10px 2px; }
+  .g-row.dim { opacity: .5; }
+  .check-box { width: 24px; height: 24px; border-radius: 6px; border: 1.5px solid var(--border); background: #fff; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+  .check-box.checked { border-color: var(--accent); background: var(--accent); }
+  .item-name { flex: 1; font-size: 15px; cursor: pointer; user-select: none; transition: all .15s; }
+  .item-name.crossed { text-decoration: line-through; color: var(--soft); }
+  .item-tag { margin-left: 6px; font-size: 10px; vertical-align: middle; }
+  .item-note-inline { margin-left: 7px; font-size: 12px; color: var(--accent); font-style: italic; }
+  .note-expand { padding-bottom: 10px; padding-left: 34px; }
+  .note-input { width: 100%; background: var(--accentLt); border: 1px solid var(--accentMd); border-radius: 8px; padding: 6px 10px; font-size: 13px; font-family: var(--font); color: var(--text); outline: none; }
+  .inv-btn { padding: 2px 8px; border-radius: 10px; border: 1px solid var(--border); background: transparent; color: var(--soft); font-size: 11px; cursor: pointer; font-family: var(--font); }
+  .inv-btn.on { border-color: var(--green); background: var(--greenLt); color: var(--green); }
+  .list-btn { padding: 3px 10px; border-radius: 10px; border: 1px solid var(--border); background: transparent; color: var(--soft); font-size: 11px; cursor: pointer; font-family: var(--font); }
+  .list-btn.on { border-color: var(--accentMd); background: var(--accentLt); color: var(--accent); }
+
+  /* ── Receipt ── */
+  .receipt-upload-btn { padding: 14px; border-radius: 12px; border: 2px dashed var(--accentMd); background: var(--accentLt); color: var(--accent); font-size: 15px; cursor: pointer; font-family: var(--font); width: 100%; }
+  .thumb-wrap { position: relative; display: inline-block; }
+  .thumb-wrap img { width: 70px; height: 94px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); }
+  .thumb-del { position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%; background: var(--red); border: none; color: #fff; font-size: 11px; cursor: pointer; line-height: 1; }
+  .process-btn { padding: 13px; border-radius: 12px; border: none; background: var(--accent); color: #fff; font-size: 15px; cursor: pointer; font-family: var(--font); font-weight: bold; width: 100%; }
+  .process-btn:disabled { background: var(--border); color: var(--soft); cursor: not-allowed; }
+
+  /* ── Meals tab ── */
+  .meals-header { background: #fff; padding: 20px 18px 14px; border-bottom: 1px solid var(--border); box-shadow: var(--shadow); }
+  .meals-header h1 { font-size: 24px; font-weight: normal; }
+  .meals-header p { margin-top: 6px; font-size: 13px; color: var(--mid); }
+  .meal-card { margin-bottom: 12px; background: #fff; border-radius: 14px; overflow: hidden; border: 1px solid var(--border); box-shadow: var(--shadow); }
+  .meal-card-head { display: flex; align-items: center; padding: 12px 14px; background: var(--sub); }
+  .meal-day { font-size: 11px; color: var(--accent); letter-spacing: .1em; text-transform: uppercase; width: 40px; font-weight: bold; }
+  .meal-name-btn { flex: 1; background: none; border: none; color: var(--text); font-size: 16px; text-align: left; cursor: pointer; font-family: var(--font); padding: 0; }
+  .meal-count { font-size: 11px; color: var(--soft); margin-right: 8px; }
+  .edit-btn { background: none; border: 1px solid var(--border); border-radius: 8px; color: var(--mid); font-size: 12px; padding: 3px 10px; cursor: pointer; font-family: var(--font); }
+  .ing-pills { padding: 10px 14px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .ing-pill { padding: 3px 10px; border-radius: 14px; font-size: 12px; font-family: var(--font); border: 1px solid; }
+  .ing-pill.missing { border-color: var(--red); background: var(--redLt); color: var(--red); cursor: pointer; }
+  .ing-pill.on-list { border-color: var(--gold); background: var(--goldLt); color: var(--gold); cursor: default; }
+  .ing-pill.in-stock { border-color: var(--green); background: var(--greenLt); color: var(--green); cursor: default; }
+  .meal-warn { padding: 4px 14px 10px; font-size: 12px; color: var(--red); }
+
+  /* ── Log tab ── */
+  .log-header { background: #fff; padding: 20px 18px 14px; border-bottom: 1px solid var(--border); box-shadow: var(--shadow); }
+  .log-header h1 { font-size: 24px; font-weight: normal; }
+  .log-entry { padding: 12px 14px; background: #fff; border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--border); box-shadow: var(--shadow); }
+  .log-type { font-size: 12px; color: var(--accent); text-transform: uppercase; letter-spacing: .07em; font-weight: bold; }
+  .log-time { font-size: 11px; color: var(--soft); }
+  .log-text { font-size: 14px; margin-top: 6px; }
+  .log-sub { font-size: 12px; color: var(--mid); margin-top: 4px; }
+
+  /* ── Overlays / Sheets ── */
+  .overlay { position: fixed; inset: 0; background: rgba(44,30,20,.45); z-index: 200; display: flex; align-items: flex-end; justify-content: center; }
+  .sheet { background: var(--bg); border-radius: 20px 20px 0 0; padding: 20px 20px 36px; width: 100%; max-width: 520px; max-height: 88vh; overflow-y: auto; border: 1px solid var(--border); border-bottom: none; box-shadow: 0 -8px 40px rgba(180,120,80,.18); }
+  .sheet-handle { width: 40px; height: 4px; background: var(--border); border-radius: 4px; margin: 0 auto 18px; display: block; }
+  .sheet h2 { font-size: 19px; font-weight: normal; color: var(--text); margin-bottom: 4px; }
+  .sheet h3 { font-size: 17px; font-weight: normal; color: var(--text); margin-bottom: 14px; }
+  .sheet p { font-size: 13px; color: var(--mid); margin-bottom: 16px; }
+
+  /* ── Match rows ── */
+  .match-row { padding: 10px 12px; border-radius: 10px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+  .match-row.known { background: var(--sub); border: 1px solid var(--border); }
+  .match-row.isnew { background: var(--goldLt); border: 1px solid var(--gold); }
+  .new-badge { font-size: 10px; background: var(--gold); color: #fff; padding: 1px 7px; border-radius: 10px; font-weight: bold; flex-shrink: 0; }
+  .match-name { font-size: 15px; color: var(--text); }
+  .match-heard { font-size: 12px; color: var(--soft); margin-top: 2px; }
+  .match-name-input { background: transparent; border: none; border-bottom: 1px solid var(--gold); color: var(--text); font-size: 15px; font-family: var(--font); outline: none; flex: 1; }
+
+  /* ── Receipt rows ── */
+  .receipt-row { padding: 10px 12px; border-radius: 10px; margin-bottom: 8px; }
+  .receipt-row.certain { background: var(--sub); border: 1px solid var(--border); }
+  .receipt-row.uncertain { background: var(--goldLt); border: 1px solid var(--gold); }
+  .receipt-desc { font-size: 12px; color: var(--soft); margin-bottom: 4px; }
+  .confidence-badge { font-size: 10px; color: var(--gold); border: 1px solid var(--gold); padding: 1px 7px; border-radius: 10px; }
+  .new-item-input { display: block; margin-top: 6px; width: 100%; background: #fff; border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 6px 10px; font-size: 14px; font-family: var(--font); }
+
+  /* ── Recipe editor ── */
+  .field-label { font-size: 11px; color: var(--soft); letter-spacing: .1em; text-transform: uppercase; display: block; margin-bottom: 4px; }
+  .field-input { display: block; width: 100%; background: #fff; border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 9px 12px; font-size: 15px; font-family: var(--font); margin-bottom: 14px; outline: none; }
+  .field-textarea { display: block; width: 100%; min-height: 130px; background: #fff; border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 9px 12px; font-size: 14px; font-family: var(--font); resize: vertical; outline: none; }
+
+  /* ── Buttons ── */
+  .btn-row { display: flex; gap: 10px; margin-top: 16px; }
+  .btn { padding: 10px 18px; border-radius: 10px; font-size: 14px; cursor: pointer; font-family: var(--font); flex: 1; border: none; }
+  .btn-primary { background: var(--accent); color: #fff; font-weight: bold; }
+  .btn-ghost { background: #fff; color: var(--text); border: 1px solid var(--border); }
+  .btn-col { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+
+  /* ── Misc ── */
+  .empty { color: var(--soft); font-size: 14px; padding: 16px 0; font-style: italic; }
+  .thumbs-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .saving-toast { position: fixed; top: 16px; right: 16px; background: var(--green); color: #fff; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-family: var(--font); z-index: 999; opacity: 0; transition: opacity .3s; pointer-events: none; }
+  .saving-toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ══ SHOP TAB ══ -->
+  <div id="tab-shop" class="tab active">
+    <div class="shop-header">
+      <div class="shop-header-row">
+        <h1>🛒 Shopping</h1>
+        <div style="display:flex;gap:8px">
+          <button class="pill-light" id="inv-toggle-btn" onclick="toggleInv()">Inventory</button>
+          <button class="pill-light" onclick="clearCart()">Clear ✓</button>
+        </div>
+      </div>
+      <div class="pill-row">
+        <button class="pill active" data-sub="add" onclick="setSubTab('add',this)">➕ Add</button>
+        <button class="pill" data-sub="list" onclick="setSubTab('list',this)">📋 List</button>
+        <button class="pill" data-sub="receipt" onclick="setSubTab('receipt',this)">🧾 Receipt</button>
+      </div>
+    </div>
+
+    <!-- Add Items -->
+    <div id="subtab-add" class="subtab active">
+      <div class="add-center">
+        <p style="color:var(--mid);font-size:14px;text-align:center;margin-top:4px">Hold the mic and say what you need, or type below</p>
+        <button class="mic-btn" id="mic-btn" onmousedown="startRec()" onmouseup="stopRec()" ontouchstart="startRec();event.preventDefault()" ontouchend="stopRec()">🎙</button>
+        <p class="mic-hint" id="mic-hint">Hold to speak</p>
+        <textarea class="voice-textarea" id="voice-txt" placeholder="What was heard appears here — or just type your items…"></textarea>
+        <button class="submit-btn" id="submit-btn" onclick="submitVoice()">Submit →</button>
+      </div>
+    </div>
+
+    <!-- List -->
+    <div id="subtab-list" class="subtab">
+      <div class="sec-head" style="color:var(--gold)">🍽 Meal Plan Ingredients (<span id="meal-count">0</span>)</div>
+      <div id="meal-items"></div>
+      <div id="extra-section" style="display:none;margin-top:22px">
+        <div class="sec-head" style="color:var(--accent)">✚ Added Extras (<span id="extra-count">0</span>)</div>
+        <div id="extra-items"></div>
+      </div>
+      <div style="margin-top:22px">
+        <div class="sec-head" style="color:var(--soft)">📦 All Items</div>
+        <p class="sec-note">Tap "+ this week" to add extras</p>
+        <div id="off-items"></div>
+      </div>
+    </div>
+
+    <!-- Receipt -->
+    <div id="subtab-receipt" class="subtab">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <p style="color:var(--mid);font-size:14px">Take photos of your receipt — add as many as needed.</p>
+        <input type="file" id="receipt-file" accept="image/*" multiple style="display:none" onchange="addReceiptImgs(event)">
+        <button class="receipt-upload-btn" onclick="document.getElementById('receipt-file').click()">📷 Add Receipt Photo (<span id="receipt-img-count">0</span> added)</button>
+        <div class="thumbs-row" id="receipt-thumbs"></div>
+        <button class="process-btn" id="process-btn" onclick="processReceipt()" disabled>Process Receipt</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MEALS TAB ══ -->
+  <div id="tab-meals" class="tab">
+    <div class="meals-header">
+      <h1>🍽 Meal Plan</h1>
+      <p>Hold meal name to swap recipe · Tap red ingredients to add</p>
+    </div>
+    <div style="padding:14px 16px" id="meal-cards"></div>
+  </div>
+
+  <!-- ══ LOG TAB ══ -->
+  <div id="tab-log" class="tab">
+    <div class="log-header"><h1>📋 Activity Log</h1></div>
+    <div style="padding:16px" id="log-entries"></div>
+  </div>
+
+</div>
+
+<!-- ══ BOTTOM NAV ══ -->
+<nav>
+  <button class="active" onclick="setTab('shop',this)"><span style="font-size:20px">🛒</span>Shop</button>
+  <button onclick="setTab('meals',this)"><span style="font-size:20px">🍽</span>Meals</button>
+  <button onclick="setTab('log',this)"><span style="font-size:20px">📋</span>Log</button>
+</nav>
+
+<!-- ══ OVERLAYS ══ -->
+<div id="overlay" class="overlay" style="display:none" onclick="overlayBgClick(event)">
+  <div class="sheet" id="sheet" onclick="event.stopPropagation()">
+    <div class="sheet-handle"></div>
+    <div id="sheet-content"></div>
+  </div>
+</div>
+
+<div class="saving-toast" id="toast">Saved ✓</div>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────────
+const PROXY   = 'https://davidjamesblack.com/api';
+const TOKEN   = 'Lindsey123!';
+const MODEL   = 'claude-haiku-4-5-20251001';
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let state = {
+  items: [],
+  meals: {},
+  log: [],
+  receipts: [],
+};
+let showInv = false;
+let receiptImgs = [];
+let lpTimer = null;
+
+const DAYS = ['fri','sat','sun','mon','tue','wed','thu'];
+const DAY_LABELS = {fri:'Friday',sat:'Saturday',sun:'Sunday',mon:'Monday',tue:'Tuesday',wed:'Wednesday',thu:'Thursday'};
+
+const DEFAULT_ITEMS = [
+  // Produce
+  'Broccoli','Scallions','Iceberg lettuce','Tomatoes','Roma tomatoes','Limes','Cilantro',
+  'Bag of potatoes','Apples','Bananas','Grapes','Mangos','Strawberries','Cauliflower',
+  'Peppers','Red onion','Carrots','Garlic','Onions',
+  // Meat & Deli
+  'Chicken thighs','Ground beef','Pork roast','Ground pork','Pork-beef mix',
+  'Deli meat','Sliced chicken breast','Sandwich meat','Pepperoni sticks','Chicken',
+  // Dairy
+  'Milk','Eggs','Cheddar cheese','Mozzarella cheese','Butter','Small yogurts','Skyr',
+  'Soy milk','Cheese sticks','Provolone cheese','Cottage cheese',
+  // Bakery
+  'Bread','Tortillas','Hamburger buns','Naan','Buns',
+  // Frozen
+  'Frozen French fries','Frozen pizzas','Frozen cannelloni','Frozen garlic bread','Frozen peas',
+  // Pantry
+  'Coffee','Whole bean coffee','Pasta','Rice','Rice cakes','Steel cut oats','Flour',
+  'Cornstarch','Honey','Hemp hearts','Chia seeds','Nutella','Cookies',
+  'Canned spaghetti sauce','Crushed tomatoes','Tomato paste','Black beans','Corn chips',
+  'Panko bread crumbs','Raisins','Apple cider vinegar','Worcestershire sauce',
+  'Garlic powder','Better Than Bouillon','Olive oil','Salt','Pepper','Sugar',
+  'Ketchup','Mustard','Mayo','Soy sauce','Hot sauce','Chicken broth','Taco seasoning',
+  'Sour cream','Salsa','Parmesan','Pasta sauce','Soup mix','Sushi rice','Nori','Fish',
+  'Roast beef','Green beans','Ginger','Taco shells','Taco kit',
+  // Drinks
+  'Apple juice','Juice boxes','Pink lemonade','Orange juice',
+  // Household
+  'Paper towel','Toilet paper','Dish detergent','Washing machine drum cleaner',
+  // Lunch & Snacks
+  'Canned tuna','Lunch snacks',
+];
+
+const DEFAULT_MEALS = {
+  fri:{name:'Hamburgers',recipes:[
+    {name:'Hamburgers',ingredients:['Ground beef','Hamburger buns','Lettuce','Tomatoes','Cheese','Ketchup','Mustard','Onions']},
+    {name:'Veggie Burgers',ingredients:['Hamburger buns','Lettuce','Tomatoes','Cheese','Ketchup','Mustard','Onions']},
+  ],activeRecipe:0},
+  sat:{name:"Josiane/Student Cooking",recipes:[{name:"Josiane/Student Cooking",ingredients:[]}],activeRecipe:0},
+  sun:{name:'Roast',recipes:[
+    {name:'Roast',ingredients:['Roast beef','Potatoes','Carrots','Onions','Chicken broth','Salt','Pepper']},
+    {name:'Baked Chicken',ingredients:['Chicken','Potatoes','Carrots','Olive oil','Salt','Pepper','Garlic']},
+  ],activeRecipe:0},
+  mon:{name:'Pasta',recipes:[
+    {name:'Pasta',ingredients:['Pasta','Pasta sauce','Ground beef','Parmesan','Garlic','Olive oil']},
+    {name:'Carbonara',ingredients:['Pasta','Eggs','Parmesan','Butter','Pepper','Garlic']},
+  ],activeRecipe:0},
+  tue:{name:'Tacos',recipes:[
+    {name:'Tacos',ingredients:['Ground beef','Taco shells','Taco seasoning','Lettuce','Tomatoes','Cheese','Sour cream','Salsa']},
+    {name:'Chicken Tacos',ingredients:['Chicken','Tortillas','Taco seasoning','Lettuce','Tomatoes','Cheese','Sour cream','Salsa']},
+  ],activeRecipe:0},
+  wed:{name:'Soup/Sushi',recipes:[
+    {name:'Soup',ingredients:['Soup mix','Chicken broth','Carrots','Onions','Potatoes','Salt','Pepper']},
+    {name:'Sushi',ingredients:['Sushi rice','Nori','Fish','Soy sauce']},
+  ],activeRecipe:0},
+  thu:{name:'Chicken & Veg',recipes:[
+    {name:'Chicken & Veg',ingredients:['Chicken thighs','Green beans','Carrots','Potatoes','Olive oil','Garlic','Salt','Pepper']},
+    {name:'Chicken Stir Fry',ingredients:['Chicken','Broccoli','Soy sauce','Rice','Garlic','Ginger']},
+  ],activeRecipe:0},
+};
+
+// ── API ───────────────────────────────────────────────────────────────────────
+async function apiClaude(system, userContent) {
+  const messages = [{role:'user', content: typeof userContent === 'string'
+    ? userContent
+    : userContent  // array of content blocks for images
+  }];
+  const res = await fetch(PROXY + '/claude', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','X-Token':TOKEN},
+    body: JSON.stringify({model:MODEL, max_tokens:1000, system, messages}),
+  });
+  const d = await res.json();
+  return d.content?.[0]?.text || '';
+}
+
+async function loadState() {
+  try {
+    const res = await fetch(PROXY + '/food', {headers:{'X-Token':TOKEN}});
+    if (res.ok) {
+      const d = await res.json();
+      if (d && d.items && d.items.length) {
+        state = d;
+        syncMealPlan();
+        return;
+      }
+    }
+  } catch(e) { console.warn('Load failed, using defaults', e); }
+  // First run — initialise
+  state.items = DEFAULT_ITEMS.map((name,i) => ({
+    id: i+1, name, onList:false, inCart:false, inInventory:false,
+    receiptDescriptions:[], mealPlan:false, note:''
+  }));
+  state.meals = JSON.parse(JSON.stringify(DEFAULT_MEALS));
+  state.log = [];
+  state.receipts = [];
+  syncMealPlan();
+  await saveState();
+}
+
+let saveTimer = null;
+async function saveState() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    try {
+      await fetch(PROXY + '/food', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','X-Token':TOKEN},
+        body: JSON.stringify(state),
+      });
+      showToast();
+    } catch(e) { console.warn('Save failed', e); }
+  }, 800);
+}
+
+function showToast() {
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+// ── Meal plan sync ────────────────────────────────────────────────────────────
+function getMealIngredients() {
+  const s = new Set();
+  DAYS.forEach(d => {
+    const r = state.meals[d];
+    if (!r) return;
+    r.recipes[r.activeRecipe].ingredients.forEach(i => s.add(i.toLowerCase().trim()));
+  });
+  return s;
+}
+
+function syncMealPlan() {
+  const needed = getMealIngredients();
+  state.items = state.items.map(i => ({
+    ...i,
+    mealPlan: needed.has(i.name.toLowerCase().trim()),
+    onList: i.onList || needed.has(i.name.toLowerCase().trim()),
+  }));
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+function setTab(id, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'shop') renderList();
+  if (id === 'meals') renderMeals();
+  if (id === 'log') renderLog();
+}
+
+function setSubTab(id, btn) {
+  document.querySelectorAll('.subtab').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.pill[data-sub]').forEach(p => p.classList.remove('active'));
+  document.getElementById('subtab-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'list') renderList();
+}
+
+// ── Inventory toggle ──────────────────────────────────────────────────────────
+function toggleInv() {
+  showInv = !showInv;
+  document.getElementById('inv-toggle-btn').classList.toggle('on', showInv);
+  renderList();
+}
+
+// ── Clear cart ────────────────────────────────────────────────────────────────
+function clearCart() {
+  state.items = state.items.map(i => ({...i, inCart:false}));
+  renderList(); saveState();
+}
+
+// ── Render list ───────────────────────────────────────────────────────────────
+function renderList() {
+  const meal  = state.items.filter(i => i.mealPlan);
+  const extra = state.items.filter(i => i.onList && !i.mealPlan);
+  const off   = state.items.filter(i => !i.onList);
+
+  document.getElementById('meal-count').textContent = meal.length;
+  document.getElementById('meal-items').innerHTML = meal.length
+    ? meal.map(itemHTML).join('') : '<p class="empty">No meal plan set.</p>';
+
+  document.getElementById('extra-section').style.display = extra.length ? '' : 'none';
+  document.getElementById('extra-count').textContent = extra.length;
+  document.getElementById('extra-items').innerHTML = extra.map(itemHTML).join('');
+
+  document.getElementById('off-items').innerHTML = off.length
+    ? off.map(i => itemHTML(i, true)).join('') : '';
+}
+
+function itemHTML(item, dim=false) {
+  const noteVisible = false; // rows start collapsed
+  return `<div class="g-row${dim?' dim':''}" id="row-${item.id}">
+    <div class="g-row-main">
+      <button class="check-box${item.inCart?' checked':''}" onclick="toggleCart(${item.id})">
+        ${item.inCart ? '<span style="color:#fff;font-size:13px;font-weight:bold;line-height:1">✓</span>' : ''}
+      </button>
+      <span class="item-name${item.inCart?' crossed':''}" onclick="toggleNoteExpand(${item.id})">
+        ${esc(item.name)}
+        ${item.note && !item.inCart ? `<span class="item-note-inline">${esc(item.note)}</span>` : ''}
+        ${item.mealPlan && !item.inCart ? '<span class="item-tag" style="color:var(--gold)">meal</span>' : ''}
+        ${item.inInventory ? '<span class="item-tag" style="color:var(--green)">✓inv</span>' : ''}
+      </span>
+      ${showInv ? `<button class="inv-btn${item.inInventory?' on':''}" onclick="toggleInvItem(${item.id})">${item.inInventory?'✓ have':'none'}</button>` : ''}
+      <button class="list-btn${item.onList?' on':''}" onclick="toggleList(${item.id})">${item.onList?'this week':'+ add'}</button>
+    </div>
+    <div class="note-expand" id="note-${item.id}" style="display:none">
+      <input class="note-input" value="${esc(item.note||'')}" placeholder='e.g. "2 bags", "the large one"'
+        oninput="updateNote(${item.id}, this.value)" onblur="collapseNote(${item.id})">
+    </div>
+  </div>`;
+}
+
+function toggleNoteExpand(id) {
+  const el = document.getElementById('note-' + id);
+  if (!el) return;
+  const open = el.style.display !== 'none';
+  el.style.display = open ? 'none' : '';
+  if (!open) el.querySelector('input').focus();
+}
+function collapseNote(id) {
+  const el = document.getElementById('note-' + id);
+  if (el) el.style.display = 'none';
+}
+function updateNote(id, val) {
+  const item = state.items.find(i => i.id === id);
+  if (item) { item.note = val; saveState(); }
+  // update inline display without full re-render
+  const row = document.getElementById('row-' + id);
+  if (row) {
+    const nameEl = row.querySelector('.item-name');
+    let noteEl = nameEl.querySelector('.item-note-inline');
+    if (val) {
+      if (!noteEl) { noteEl = document.createElement('span'); noteEl.className='item-note-inline'; nameEl.appendChild(noteEl); }
+      noteEl.textContent = val;
+    } else if (noteEl) { noteEl.remove(); }
+  }
+}
+function toggleCart(id) {
+  const item = state.items.find(i => i.id === id);
+  if (item) { item.inCart = !item.inCart; renderList(); saveState(); }
+}
+function toggleList(id) {
+  const item = state.items.find(i => i.id === id);
+  if (item) { item.onList = !item.onList; item.inCart = false; renderList(); saveState(); }
+}
+function toggleInvItem(id) {
+  const item = state.items.find(i => i.id === id);
+  if (item) { item.inInventory = !item.inInventory; renderList(); saveState(); }
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Voice / Add Items ─────────────────────────────────────────────────────────
+let recognition = null;
+let recFinal = '';
+
+function startRec() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { alert('Speech recognition not supported in this browser.'); return; }
+  recFinal = document.getElementById('voice-txt').value;
+  const r = new SR();
+  r.continuous = true; r.interimResults = true; r.lang = 'en-US';
+  r.onresult = e => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) recFinal += (recFinal ? ' ' : '') + e.results[i][0].transcript;
+      else interim = e.results[i][0].transcript;
+    }
+    document.getElementById('voice-txt').value = recFinal + (interim ? ' ' + interim : '');
+  };
+  r.onerror = () => stopRec();
+  r.onend   = () => stopRec();
+  recognition = r; r.start();
+  document.getElementById('mic-btn').classList.add('listening');
+  document.getElementById('mic-hint').textContent = 'Listening…';
+  document.getElementById('mic-hint').classList.add('active');
+}
+function stopRec() {
+  recognition?.stop(); recognition = null;
+  document.getElementById('mic-btn').classList.remove('listening');
+  document.getElementById('mic-hint').textContent = 'Hold to speak';
+  document.getElementById('mic-hint').classList.remove('active');
+}
+
+async function submitVoice() {
+  const txt = document.getElementById('voice-txt').value.trim();
+  if (!txt) return;
+  const btn = document.getElementById('submit-btn');
+  btn.textContent = 'Matching items…'; btn.disabled = true;
+  const itemNames = state.items.map(i => i.name).join(', ');
+  let matches = [];
+  try {
+    const raw = await apiClaude(
+      'Match grocery requests to known items. Return ONLY valid JSON, no markdown.',
+      `Known items: ${itemNames}\nUser said: "${txt}"\nReturn JSON: {"matches":[{"said":"...","matched":"known item name or null","isNew":true or false,"newName":"suggested name if new"}]}`
+    );
+    const parsed = JSON.parse(raw.replace(/```json|```/g,'').trim());
+    matches = parsed.matches || [];
+  } catch(e) {
+    matches = [{said:txt, matched:null, isNew:true, newName:txt}];
+  }
+  btn.textContent = 'Submit →'; btn.disabled = false;
+  showMatchPopup(matches, txt);
+}
+
+function showMatchPopup(matches, original) {
+  const rows = matches.map((m,i) => `
+    <div class="match-row ${m.isNew?'isnew':'known'}" id="mr-${i}">
+      <input type="checkbox" checked id="mc-${i}" style="accent-color:var(--accent);width:17px;height:17px">
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:6px">
+          ${m.isNew ? '<span class="new-badge">NEW</span>' : ''}
+          ${m.isNew
+            ? `<input class="match-name-input" id="mn-${i}" value="${esc(m.newName||m.said)}">`
+            : `<span class="match-name">${esc(m.matched)}</span>`}
+        </div>
+        ${!m.isNew && m.said !== m.matched ? `<div class="match-heard">heard: "${esc(m.said)}"</div>` : ''}
+      </div>
+    </div>`).join('');
+
+  setSheet(`
+    <h2>Confirm Items</h2>
+    <p>From: "<em>${esc(original)}</em>"</p>
+    ${rows}
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeOverlay()">← Edit more</button>
+      <button class="btn btn-primary" onclick="confirmMatches(${matches.length},'${esc(original)}')">Add to List</button>
+    </div>`);
+}
+
+function confirmMatches(count, original) {
+  const approved = [];
+  for (let i = 0; i < count; i++) {
+    if (!document.getElementById('mc-'+i)?.checked) continue;
+    const nameEl = document.getElementById('mn-'+i);
+    const rowEl  = document.getElementById('mr-'+i);
+    const isNew  = rowEl?.classList.contains('isnew');
+    const name   = nameEl ? nameEl.value.trim() : rowEl?.querySelector('.match-name')?.textContent?.trim();
+    if (!name) continue;
+    if (isNew) {
+      const newId = Math.max(...state.items.map(i=>i.id)) + 1;
+      state.items.push({id:newId, name, onList:true, inCart:false, inInventory:false, receiptDescriptions:[], mealPlan:false, note:''});
+      approved.push(name);
+    } else {
+      const item = state.items.find(i => i.name === name);
+      if (item) { item.onList = true; approved.push(name); }
+    }
+  }
+  state.log.unshift({type:'voice', text:original, timestamp:new Date().toISOString(), added:approved});
+  saveState(); closeOverlay();
+  document.getElementById('voice-txt').value = '';
+  setSubTab('list', document.querySelector('.pill[data-sub="list"]'));
+  renderList();
+}
+
+// ── Receipt ───────────────────────────────────────────────────────────────────
+function addReceiptImgs(e) {
+  const files = Array.from(e.target.files);
+  files.forEach(f => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      receiptImgs.push(ev.target.result);
+      renderReceiptThumbs();
+    };
+    reader.readAsDataURL(f);
+  });
+  e.target.value = '';
+}
+
+function renderReceiptThumbs() {
+  document.getElementById('receipt-img-count').textContent = receiptImgs.length;
+  document.getElementById('receipt-thumbs').innerHTML = receiptImgs.map((img,i) => `
+    <div class="thumb-wrap">
+      <img src="${img}" alt="">
+      <button class="thumb-del" onclick="removeReceiptImg(${i})">×</button>
+    </div>`).join('');
+  document.getElementById('process-btn').disabled = receiptImgs.length === 0;
+}
+
+function removeReceiptImg(i) {
+  receiptImgs.splice(i,1);
+  renderReceiptThumbs();
+}
+
+async function processReceipt() {
+  if (!receiptImgs.length) return;
+  const btn = document.getElementById('process-btn');
+  btn.textContent = 'Reading receipt…'; btn.disabled = true;
+
+  const imgBlocks = receiptImgs.map(img => {
+    const [hdr, data] = img.split(',');
+    return {type:'image', source:{type:'base64', media_type: hdr.match(/data:(.*);/)?.[1]||'image/jpeg', data}};
+  });
+
+  const itemNames = state.items.map(i => i.name).join(', ');
+  let receiptItems = [];
+  try {
+    const raw = await apiClaude(
+      'Extract grocery items from receipt images. Return ONLY valid JSON.',
+      [...imgBlocks, {type:'text', text:`Known grocery items: ${itemNames}\nExtract all grocery/food line items and match or mark new.\nReturn JSON: {"items":[{"receiptDesc":"exact text","matched":"known item or null","isNew":true or false,"confidence":"high/medium/low"}]}`}]
+    );
+    const parsed = JSON.parse(raw.replace(/```json|```/g,'').trim());
+    receiptItems = parsed.items || [];
+  } catch(e) { receiptItems = []; }
+
+  btn.textContent = 'Process Receipt'; btn.disabled = false;
+  showReceiptPopup(receiptItems);
+}
+
+function showReceiptPopup(items) {
+  const rows = items.map((r,i) => `
+    <div class="receipt-row ${r.isNew||r.confidence==='low'?'uncertain':'certain'}" id="rr-${i}">
+      <div style="display:flex;gap:10px">
+        <input type="checkbox" checked id="rc-${i}" style="accent-color:var(--accent);margin-top:3px">
+        <div style="flex:1">
+          <div class="receipt-desc">Receipt: <em>${esc(r.receiptDesc)}</em></div>
+          ${r.isNew ? `
+            <span class="new-badge">NEW ITEM</span>
+            <input class="new-item-input" id="rn-${i}" placeholder="Name this item…" value="${esc(r.receiptDesc)}">
+          ` : `
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:14px">→ ${esc(r.matched)}</span>
+              ${r.confidence!=='high' ? `<span class="confidence-badge">${esc(r.confidence)}</span>` : ''}
+            </div>
+          `}
+        </div>
+      </div>
+    </div>`).join('');
+
+  setSheet(`
+    <h2>Receipt Review</h2>
+    <p>${items.length} items found</p>
+    <div style="max-height:360px;overflow-y:auto">${rows}</div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeOverlay()">Discard</button>
+      <button class="btn btn-primary" onclick="confirmReceipt(${items.length})">Save Receipt</button>
+    </div>`);
+}
+
+function confirmReceipt(count) {
+  const confirmed = [];
+  for (let i = 0; i < count; i++) {
+    if (!document.getElementById('rc-'+i)?.checked) continue;
+    const rowEl  = document.getElementById('rr-'+i);
+    const isNew  = rowEl?.classList.contains('uncertain') && document.getElementById('rn-'+i);
+    if (isNew) {
+      const name = document.getElementById('rn-'+i).value.trim();
+      if (!name) continue;
+      const newId = Math.max(...state.items.map(i=>i.id)) + 1;
+      state.items.push({id:newId, name, onList:false, inCart:false, inInventory:true, receiptDescriptions:[name], mealPlan:false, note:''});
+      confirmed.push({isNew:true, confirmedName:name, receiptDesc:name});
+    } else {
+      const matchedEl = rowEl?.querySelector('span[style]');
+      const matched = matchedEl?.textContent?.replace('→ ','').trim();
+      const descEl = rowEl?.querySelector('.receipt-desc em');
+      const desc = descEl?.textContent || '';
+      if (matched) {
+        const item = state.items.find(i => i.name === matched);
+        if (item) {
+          item.inInventory = true;
+          if (!item.receiptDescriptions) item.receiptDescriptions = [];
+          if (!item.receiptDescriptions.includes(desc)) item.receiptDescriptions.push(desc);
+        }
+        confirmed.push({isNew:false, matched, receiptDesc:desc});
+      }
+    }
+  }
+  state.log.unshift({type:'receipt', timestamp:new Date().toISOString(), count:confirmed.length});
+  state.receipts = state.receipts || [];
+  state.receipts.unshift({date:new Date().toISOString(), items:confirmed});
+  receiptImgs = [];
+  renderReceiptThumbs();
+  saveState(); closeOverlay();
+  setSubTab('list', document.querySelector('.pill[data-sub="list"]'));
+  renderList();
+}
+
+// ── Render Meals ──────────────────────────────────────────────────────────────
+function getIngStatus(ing) {
+  const item = state.items.find(i => i.name.toLowerCase() === ing.toLowerCase());
+  if (!item) return 'missing';
+  if (item.onList) return 'on-list';
+  if (item.inInventory) return 'in-stock';
+  return 'missing';
+}
+
+function renderMeals() {
+  const html = DAYS.map(day => {
+    const meal = state.meals[day];
+    if (!meal) return '';
+    const recipe = meal.recipes[meal.activeRecipe];
+    const missing = recipe.ingredients.filter(i => getIngStatus(i) === 'missing');
+    const pills = recipe.ingredients.map(ing => {
+      const s = getIngStatus(ing);
+      return `<span class="ing-pill ${s}" ${s==='missing'?`onclick="ingAlert('${esc(ing)}','${day}')"`:''}>
+        ${esc(ing)}</span>`;
+    }).join('');
+    return `
+      <div class="meal-card">
+        <div class="meal-card-head">
+          <span class="meal-day">${day}</span>
+          <button class="meal-name-btn"
+            onmousedown="startLP('${day}')" onmouseup="endLP()"
+            ontouchstart="startLP('${day}');event.preventDefault()" ontouchend="endLP()">
+            ${esc(recipe.name)}
+          </button>
+          ${meal.recipes.length > 1 ? `<span class="meal-count">${meal.activeRecipe+1}/${meal.recipes.length}</span>` : ''}
+          <button class="edit-btn" onclick="editRecipe('${day}',${meal.activeRecipe})">Edit</button>
+        </div>
+        ${recipe.ingredients.length ? `<div class="ing-pills">${pills}</div>` : ''}
+        ${missing.length ? `<div class="meal-warn">⚠ ${missing.length} ingredient${missing.length>1?'s':''} not on list — tap to add</div>` : ''}
+      </div>`;
+  }).join('');
+  document.getElementById('meal-cards').innerHTML = html;
+}
+
+function startLP(day) { lpTimer = setTimeout(() => showSwapSheet(day), 500); }
+function endLP() { clearTimeout(lpTimer); }
+
+function showSwapSheet(day) {
+  const meal = state.meals[day];
+  const btns = meal.recipes.map((r,i) => `
+    <button onclick="swapRecipe('${day}',${i})" style="display:block;width:100%;text-align:left;padding:11px 14px;background:${i===meal.activeRecipe?'var(--accentLt)':'#fff'};border:1px solid ${i===meal.activeRecipe?'var(--accent)':'var(--border)'};border-radius:10px;color:var(--text);font-size:15px;cursor:pointer;margin-bottom:8px;font-family:var(--font)">
+      ${esc(r.name)}
+    </button>`).join('');
+  setSheet(`
+    <h3>Recipe for ${DAY_LABELS[day]}</h3>
+    ${btns}
+    <button class="btn btn-ghost" onclick="addNewRecipe('${day}')">+ Add New Recipe</button>`);
+}
+
+function swapRecipe(day, idx) {
+  state.meals[day].activeRecipe = idx;
+  syncMealPlan(); saveState(); closeOverlay(); renderMeals();
+}
+
+function addNewRecipe(day) {
+  const idx = state.meals[day].recipes.length;
+  state.meals[day].recipes.push({name:'New Recipe', ingredients:[]});
+  closeOverlay();
+  setTimeout(() => editRecipe(day, idx), 50);
+}
+
+function editRecipe(day, idx) {
+  const recipe = state.meals[day].recipes[idx];
+  setSheet(`
+    <h3>Edit — ${DAY_LABELS[day]}</h3>
+    <label class="field-label">Recipe Name</label>
+    <input class="field-input" id="re-name" value="${esc(recipe.name)}">
+    <label class="field-label">Ingredients (one per line)</label>
+    <textarea class="field-textarea" id="re-ings">${esc(recipe.ingredients.join('\n'))}</textarea>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeOverlay()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveRecipe('${day}',${idx})">Save</button>
+    </div>`);
+}
+
+function saveRecipe(day, idx) {
+  const name = document.getElementById('re-name').value.trim();
+  const ings = document.getElementById('re-ings').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  state.meals[day].recipes[idx] = {name, ingredients:ings};
+  syncMealPlan(); saveState(); closeOverlay(); renderMeals();
+}
+
+function ingAlert(ing, day) {
+  setSheet(`
+    <h3>${esc(ing)}</h3>
+    <p>Not on shopping list or in inventory.</p>
+    <div class="btn-col">
+      <button class="btn btn-primary" onclick="resolveIng('add','${esc(ing)}')">➕ Add to Shopping List</button>
+      <button class="btn btn-ghost" onclick="resolveIng('verify','${esc(ing)}')">✅ We already have it</button>
+      <button class="btn btn-ghost" onclick="closeOverlay()">⏭ Skip for now</button>
+    </div>`);
+}
+
+function resolveIng(action, ing) {
+  if (action === 'add') {
+    const ex = state.items.find(i => i.name.toLowerCase() === ing.toLowerCase());
+    if (ex) { ex.onList = true; }
+    else {
+      const newId = Math.max(...state.items.map(i=>i.id)) + 1;
+      state.items.push({id:newId, name:ing, onList:true, inCart:false, inInventory:false, receiptDescriptions:[], mealPlan:false, note:''});
+    }
+  } else if (action === 'verify') {
+    const ex = state.items.find(i => i.name.toLowerCase() === ing.toLowerCase());
+    if (ex) ex.inInventory = true;
+  }
+  saveState(); closeOverlay(); renderMeals();
+}
+
+// ── Render Log ────────────────────────────────────────────────────────────────
+function renderLog() {
+  const el = document.getElementById('log-entries');
+  if (!state.log || !state.log.length) { el.innerHTML = '<p class="empty">No activity yet.</p>'; return; }
+  el.innerHTML = state.log.map(e => `
+    <div class="log-entry">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <span class="log-type">${e.type==='voice'?'🎙 Voice Add':e.type==='receipt'?'🧾 Receipt':'Note'}</span>
+        <span class="log-time">${new Date(e.timestamp).toLocaleString()}</span>
+      </div>
+      ${e.type==='voice' ? `<div class="log-text">"${esc(e.text)}"</div><div class="log-sub">Added: ${esc((e.added||[]).join(', '))}</div>` : ''}
+      ${e.type==='receipt' ? `<div class="log-text">${e.count} items logged from receipt</div>` : ''}
+    </div>`).join('');
+}
+
+// ── Sheet / overlay ───────────────────────────────────────────────────────────
+function setSheet(html) {
+  document.getElementById('sheet-content').innerHTML = html;
+  document.getElementById('overlay').style.display = 'flex';
+}
+function closeOverlay() { document.getElementById('overlay').style.display = 'none'; }
+function overlayBgClick(e) { if (e.target === document.getElementById('overlay')) closeOverlay(); }
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+(async () => {
+  await loadState();
+  renderList();
+})();
+</script>
+</body>
+</html>
